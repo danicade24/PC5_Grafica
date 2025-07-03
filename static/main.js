@@ -1,17 +1,19 @@
+// main.js
+import { iniciarJuegoPalabra } from "./juego-ordenar.js";
+import { iniciarJuegoOperaciones } from "./juego-operaciones.js";
+
 const THREE = window.MINDAR.IMAGE.THREE;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   const start = async () => {
     const mindarThree = new window.MINDAR.IMAGE.MindARThree({
       container: document.body,
-      imageTargetSrc: '/static/assets/targets/targets (3).mind',
+      imageTargetSrc: "/static/assets/targets/eye.mind",
     });
 
     const { renderer, scene, camera } = mindarThree;
-
     const anchor = mindarThree.addAnchor(0);
 
-    // Confirmar detección del marcador
     anchor.onTargetFound = () => {
       console.log("🎯 MARCADOR DETECTADO");
     };
@@ -19,90 +21,116 @@ document.addEventListener('DOMContentLoaded', () => {
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     scene.add(light);
 
-    // Fuente y letras
-    const fontLoader = new THREE.FontLoader();
-    fontLoader.load('/static/assets/fonts/helvetiker_regular.typeface.json', (font) => {
-      console.log("✅ Fuente cargada correctamente");
+    let buttons = [];
+    let currentTouchHandler = null;
 
-      const word = "ESCUELA";
-      const targetSequence = word.split('');
-      const clickedLetters = [];
-      const letters = [];
+    const createMenu = (font, anchor) => {
+      buttons = [];
 
-      // Mezclar las letras
-      const shuffled = [...targetSequence].sort(() => Math.random() - 0.5);
+      // Botón 1: Ordenar Palabra
+      const button1Group = new THREE.Group();
+      const box1 = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 0.4, 0.05),
+        new THREE.MeshStandardMaterial({ color: 0x0077ff })
+      );
+      box1.position.set(0, 0, -0.03);
+      button1Group.add(box1);
 
-      shuffled.forEach((letter, i) => {
-        const geometry = new THREE.TextGeometry(letter, {
+      const text1 = new THREE.Mesh(
+        new THREE.TextGeometry("Ordenar Palabra", {
           font: font,
-          size: 0.2,
-          height: 0.05,
-        });
-        const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
-        const mesh = new THREE.Mesh(geometry, material);
+          size: 0.15,
+          height: 0.02,
+        }),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      text1.position.set(-0.7, -0.07, 0);
+      button1Group.add(text1);
 
-        // Posición circular flotante
-        const angle = (i / shuffled.length) * Math.PI * 2;
-        const radius = 0.5;
-        mesh.position.set(
-          Math.cos(angle) * radius,
-          Math.sin(angle) * 0.4 + 0.2,
-          0
-        );
-        mesh.name = letter;
-        anchor.group.add(mesh);
-        letters.push(mesh);
-      });
+      button1Group.position.set(0, 0.4, 0);
+      button1Group.name = "ordenar";
+      anchor.group.add(button1Group);
+      buttons.push(button1Group);
 
-      // Raycaster
+      // Botón 2: Operaciones
+      const button2Group = new THREE.Group();
+      const box2 = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 0.4, 0.05),
+        new THREE.MeshStandardMaterial({ color: 0xff5500 })
+      );
+      box2.position.set(0, 0, -0.03);
+      button2Group.add(box2);
+
+      const text2 = new THREE.Mesh(
+        new THREE.TextGeometry("Operaciones", {
+          font: font,
+          size: 0.15,
+          height: 0.02,
+        }),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      text2.position.set(-0.5, -0.07, 0);
+      button2Group.add(text2);
+
+      button2Group.position.set(0, -0.1, 0);
+      button2Group.name = "operaciones";
+      anchor.group.add(button2Group);
+      buttons.push(button2Group);
+    };
+
+    const setupTouchHandler = (anchor, font, camera) => {
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
 
-      const checkOrder = (letter) => {
-        const expected = targetSequence[clickedLetters.length];
-        return letter === expected;
-      };
-
-      const onTouch = (event) => {
+      const handler = (event) => {
         const x = (event.clientX / window.innerWidth) * 2 - 1;
         const y = -(event.clientY / window.innerHeight) * 2 + 1;
         pointer.set(x, y);
         raycaster.setFromCamera(pointer, camera);
 
-        const intersects = raycaster.intersectObjects(letters);
+        const intersects = raycaster.intersectObjects(buttons, true);
         if (intersects.length > 0) {
-          const selected = intersects[0].object;
-          const letter = selected.name;
-          if (checkOrder(letter)) {
-            selected.material.color.set(0x00ff00); // Verde
-            clickedLetters.push(letter);
-          } else {
-            selected.material.color.set(0xff0000); // Rojo
-          }
+          const selectedGroup = intersects[0].object.parent;
 
-          // ¿Completó la palabra?
-          if (clickedLetters.length === targetSequence.length) {
-            const geometry = new THREE.TextGeometry("¡Muy bien!", {
-              font: font,
-              size: 0.25,
-              height: 0.05,
+          window.removeEventListener("click", currentTouchHandler);
+          window.removeEventListener("touchstart", currentTouchHandler);
+
+          anchor.group.clear();
+
+          if (selectedGroup.name === "ordenar") {
+            console.log("🧩 Iniciando juego de palabra...");
+            iniciarJuegoPalabra(anchor, font, camera, () => {
+              anchor.group.clear();
+              createMenu(font, anchor);
+              setupTouchHandler(anchor, font, camera);
             });
-            const material = new THREE.MeshStandardMaterial({ color: 0xffff00 });
-            const finalText = new THREE.Mesh(geometry, material);
-            finalText.position.set(-0.5, -0.3, 0);
-            anchor.group.add(finalText);
-            console.log("✅ Juego completado: ESCUELA");
+          } else if (selectedGroup.name === "operaciones") {
+            console.log("🧮 Iniciando juego de operaciones...");
+            iniciarJuegoOperaciones(anchor, font, camera, () => {
+              anchor.group.clear();
+              createMenu(font, anchor);
+              setupTouchHandler(anchor, font, camera);
+            });
           }
         }
       };
 
-      window.addEventListener('click', onTouch);
-      window.addEventListener('touchstart', (e) => {
-        if (e.touches.length > 0) {
-          onTouch(e.touches[0]);
-        }
+      currentTouchHandler = handler;
+      window.addEventListener("click", handler);
+      window.addEventListener("touchstart", (e) => {
+        if (e.touches.length > 0) handler(e.touches[0]);
       });
-    });
+    };
+
+    const fontLoader = new THREE.FontLoader();
+    fontLoader.load(
+      "/static/assets/fonts/helvetiker_regular.typeface.json",
+      (font) => {
+        console.log("✅ Fuente cargada correctamente");
+        createMenu(font, anchor);
+        setupTouchHandler(anchor, font, camera);
+      }
+    );
 
     await mindarThree.start();
     renderer.setAnimationLoop(() => {
