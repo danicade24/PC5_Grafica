@@ -10,8 +10,12 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
   let currentGroup = null;
   let resultText = null;
   let barraProgreso = null;
+  let contadorText = null;
   let tiempoRestante = 10;
   let intervalo = null;
+
+  const textureLoader = new THREE.TextureLoader();
+  const iconoSalir = textureLoader.load("/static/assets/img/exit.png");
 
   const generarOperacion = () => {
     const a = Math.floor(Math.random() * max);
@@ -41,20 +45,34 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     anchor.group.add(barraProgreso);
   };
 
+  const actualizarContador = () => {
+    if (contadorText) anchor.group.remove(contadorText);
+    const contadorGeo = new THREE.TextGeometry(`${tiempoRestante}`, {
+      font: font,
+      size: 0.15,
+      height: 0.02,
+    });
+    const contadorMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+    contadorText = new THREE.Mesh(contadorGeo, contadorMat);
+    contadorText.position.set(1, 0.8, 0);
+    anchor.group.add(contadorText);
+  };
+
   const mostrarOperacion = () => {
     if (currentGroup) anchor.group.remove(currentGroup);
     if (resultText) anchor.group.remove(resultText);
     if (barraProgreso) anchor.group.remove(barraProgreso);
+    if (contadorText) anchor.group.remove(contadorText);
     tiempoRestante = 10;
     actualizarBarra();
+    actualizarContador();
 
     const grupo = new THREE.Group();
     const data = generarOperacion();
 
-    // Texto de operación
     const opGeo = new THREE.TextGeometry(data.texto, {
       font: font,
-      size: 0.25,
+      size: 0.2,
       height: 0.05,
     });
     const opMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
@@ -62,95 +80,53 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     opMesh.position.set(-0.3, 0.4, 0);
     grupo.add(opMesh);
 
-    // Alternativas
     const alternativasMesh = [];
     data.alternativas.forEach((num, i) => {
       const cube = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.3, 0.05),
+        new THREE.BoxGeometry(0.3, 0.2, 0.05),
         new THREE.MeshStandardMaterial({ color: 0x007700 })
       );
-      cube.position.set(i - 1, -0.2, 0);
+      cube.position.set(-0.7 + i * 0.7, -0.1, 0);
       grupo.add(cube);
 
       const numGeo = new THREE.TextGeometry(num.toString(), {
         font: font,
-        size: 0.15,
+        size: 0.12,
         height: 0.02,
       });
       const numMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
       const numMesh = new THREE.Mesh(numGeo, numMat);
-      numMesh.position.set(i - 1 - 0.1, -0.23, 0.03);
+      numMesh.position.set(
+        cube.position.x - 0.08,
+        cube.position.y - 0.05,
+        0.03
+      );
       numMesh.name = num.toString();
       grupo.add(numMesh);
 
       alternativasMesh.push(numMesh);
     });
 
-    // Texto de resultado seleccionado
-    const resultadoGeo = new THREE.TextGeometry("", {
-      font: font,
-      size: 0.2,
-      height: 0.05,
+    // Botón salir (con imagen) más abajo
+    const textureMat = new THREE.MeshBasicMaterial({
+      map: iconoSalir,
+      transparent: true,
     });
-    const resultadoMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
-    resultText = new THREE.Mesh(resultadoGeo, resultadoMat);
-    resultText.position.set(-0.4, -0.5, 0);
-    grupo.add(resultText);
-
-    // Botón OK
-    const okGroup = new THREE.Group();
-    const okBox = new THREE.Mesh(
-      new THREE.BoxGeometry(0.6, 0.3, 0.05),
-      new THREE.MeshStandardMaterial({ color: 0x0000ff })
+    const exitButton = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.3, 0.3),
+      textureMat
     );
-    okBox.position.set(0, 0, -0.03);
-    okGroup.add(okBox);
-
-    const okText = new THREE.Mesh(
-      new THREE.TextGeometry("OK", {
-        font: font,
-        size: 0.15,
-        height: 0.02,
-      }),
-      new THREE.MeshStandardMaterial({ color: 0xffffff })
-    );
-    okText.position.set(-0.15, -0.07, 0);
-    okGroup.add(okText);
-    okGroup.position.set(0, -0.7, 0);
-    okGroup.name = "ok";
-    grupo.add(okGroup);
-
-    // Botón salir
-    const salirGroup = new THREE.Group();
-    const salirBox = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4, 0.3, 0.05),
-      new THREE.MeshStandardMaterial({ color: 0xcc0000 })
-    );
-    salirBox.position.set(0, 0, -0.03);
-    salirGroup.add(salirBox);
-
-    const salirText = new THREE.Mesh(
-      new THREE.TextGeometry("✖", {
-        font: font,
-        size: 0.15,
-        height: 0.02,
-      }),
-      new THREE.MeshStandardMaterial({ color: 0xffffff })
-    );
-    salirText.position.set(-0.07, -0.07, 0);
-    salirGroup.add(salirText);
-    salirGroup.position.set(0.9, -0.7, 0);
-    salirGroup.name = "salir";
-    grupo.add(salirGroup);
+    exitButton.position.set(0, -1.2, 0); // centrado abajo
+    exitButton.name = "salir";
+    grupo.add(exitButton);
 
     anchor.group.add(grupo);
     currentGroup = grupo;
 
-    let seleccionado = null;
-
     const actualizarTiempo = () => {
       tiempoRestante--;
       actualizarBarra();
+      actualizarContador();
       if (tiempoRestante <= 0) {
         clearInterval(intervalo);
         mostrarOperacion();
@@ -167,35 +143,35 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       const intersected = raycaster.intersectObjects(alternativasMesh, true);
       if (intersected.length > 0) {
         const selected = intersected[0].object;
-        seleccionado = parseInt(selected.name);
+        const seleccionado = parseInt(selected.name);
 
-        grupo.remove(resultText);
-        const newGeo = new THREE.TextGeometry(`Elegiste: ${seleccionado}`, {
+        clearInterval(intervalo);
+
+        const correcto = seleccionado === data.correcta;
+        const msg = correcto ? "✅ Bien" : "❌ Mal";
+        const newGeo = new THREE.TextGeometry(msg, {
           font: font,
           size: 0.2,
           height: 0.05,
         });
-        resultText = new THREE.Mesh(newGeo, resultadoMat);
-        resultText.position.set(-0.4, -0.5, 0);
+        const newMat = new THREE.MeshStandardMaterial({
+          color: correcto ? 0x00ff00 : 0xff0000,
+        });
+        resultText = new THREE.Mesh(newGeo, newMat);
+        resultText.position.set(-0.3, -0.5, 0);
         grupo.add(resultText);
+
+        setTimeout(() => {
+          mostrarOperacion();
+        }, 1500);
       }
 
-      const boton = raycaster.intersectObjects([okGroup, salirGroup], true);
-      if (boton.length > 0) {
-        const nombre = boton[0].object.parent.name;
-        if (nombre === "ok" && seleccionado !== null) {
-          clearInterval(intervalo);
-          if (seleccionado === data.correcta) {
-            mostrarOperacion();
-          } else {
-            resultText.material.color.set(0xff0000);
-          }
-        } else if (nombre === "salir") {
-          clearInterval(intervalo);
-          window.removeEventListener("click", onTouch);
-          window.removeEventListener("touchstart", () => {});
-          volverAlMenu();
-        }
+      const boton = raycaster.intersectObject(exitButton, true);
+      if (boton.length > 0 && boton[0].object.name === "salir") {
+        clearInterval(intervalo);
+        window.removeEventListener("click", onTouch);
+        window.removeEventListener("touchstart", () => {});
+        volverAlMenu();
       }
     };
 

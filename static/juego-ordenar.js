@@ -115,7 +115,7 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
 
   const botones = [];
 
-  textureLoader.load("/static/assets/icons/back.png", (texture) => {
+  textureLoader.load("./static/assets/icons/back.png", (texture) => {
     const mat = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
@@ -128,7 +128,7 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
     botones.push(btn);
   });
 
-  textureLoader.load("/static/assets/icons/exit.png", (texture) => {
+  textureLoader.load("./static/assets/icons/exit.png", (texture) => {
     const mat = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
