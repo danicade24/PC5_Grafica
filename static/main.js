@@ -135,7 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
     await mindarThree.start();
     renderer.setAnimationLoop(() => {
       renderer.render(scene, camera);
+
+      // Animar si existe
+      if (scene.userData.finalText) {
+        scene.userData.finalText.rotation.y += 0.01; // gira lentamente
+      }
     });
+
   };
 
   start();
