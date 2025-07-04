@@ -13,7 +13,6 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
   let barraProgreso = null;
   let contadorText = null;
 
-  // NUEVO: Referencias estables para eventos
   let lastGroup = null;
   let lastBotones = [];
 
