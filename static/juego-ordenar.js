@@ -15,6 +15,11 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
   let finalText = null;
   let lastRemoved = null;
 
+  //variables para el sistema de puntajes
+  let scoreOrdenar = 0;
+  let scoreTextMesh = null;
+
+
   const updateResult = () => {
     if (resultMesh) anchor.group.remove(resultMesh);
 
@@ -28,7 +33,25 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
     anchor.group.add(resultMesh);
   };
 
+  //funciono para el puntaje
+  const actualizarScore = () => {
+    if (scoreTextMesh) anchor.group.remove(scoreTextMesh);
+
+    const geo = new THREE.TextGeometry(`Puntaje: ${scoreOrdenar}`, {
+      font: font,
+      size: 0.12,
+      height: 0.02,
+    });
+
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    scoreTextMesh = new THREE.Mesh(geo, mat);
+    scoreTextMesh.position.set(-1.2, 1, 0); // esquina superior izquierda
+    anchor.group.add(scoreTextMesh);
+  };
+
   const mostrarLetras = () => {
+    actualizarScore();
+
     letters.forEach((l) => anchor.group.remove(l));
     letters.length = 0;
     clickedLetters.length = 0;
@@ -91,10 +114,15 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
           selected.visible = false;
         }, 300);
         clickedLetters.push(letter);
+        scoreOrdenar += 10; 
         updateResult();
+        actualizarScore();   
       } else {
         const originalColor = 0x0077ff; // Azul original (puedes cambiarlo)
         selected.material.color.set(0xff0000); // Rojo temporal
+
+        scoreOrdenar = Math.max(0, scoreOrdenar - 5); // evita negativos 
+        actualizarScore();
 
         setTimeout(() => {
           selected.material.color.set(originalColor);
@@ -112,6 +140,9 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
         finalText = new THREE.Mesh(geometry, material);
         finalText.position.set(-0.3, -0.4, 0);
         anchor.group.add(finalText);
+
+        scoreOrdenar += 20;
+        actualizarScore();
 
         setTimeout(() => {
           indicePalabra = (indicePalabra + 1) % palabras.length;
