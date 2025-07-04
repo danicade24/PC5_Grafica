@@ -1,9 +1,8 @@
-// main.js
 import { iniciarJuegoOrdenarCubo } from "./juego-ordenar-cubos.js";
-// import { iniciarJuegoPalabra } from "./juego-ordenar.js";
 import { iniciarJuegoOperaciones } from "./juego-operaciones.js";
 
 const THREE = window.MINDAR.IMAGE.THREE;
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const start = async () => {
@@ -13,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const { renderer, scene, camera } = mindarThree;
+    renderer.domElement.style.cursor = 'url("/static/assets/icons/cursor.png") 0 0, auto';
+
     const anchor = mindarThree.addAnchor(0);
 
     anchor.onTargetFound = () => {
@@ -28,51 +29,63 @@ document.addEventListener("DOMContentLoaded", () => {
     const createMenu = (font, anchor) => {
       buttons = [];
 
-      // Botón 1: Ordenar Palabra
-      const button1Group = new THREE.Group();
+      // --------- BOTÓN 1: Letrappuzzle ---------
+      const texto1 = "Letrappuzzle";
+      const geo1 = new THREE.TextGeometry(texto1, {
+        font: font,
+        size: 0.10,
+        height: 0.02,
+      });
+      geo1.computeBoundingBox();
+      const width1 = geo1.boundingBox.max.x - geo1.boundingBox.min.x;
+      const padding1 = 0.3;
+
       const box1 = new THREE.Mesh(
-        new THREE.BoxGeometry(1.6, 0.4, 0.05),
+        new THREE.BoxGeometry(width1 + padding1, 0.4, 0.05),
         new THREE.MeshStandardMaterial({ color: 0x0077ff })
       );
       box1.position.set(0, 0, -0.03);
-      button1Group.add(box1);
 
       const text1 = new THREE.Mesh(
-        new THREE.TextGeometry("Ordenar Palabra", {
-          font: font,
-          size: 0.15,
-          height: 0.02,
-        }),
+        geo1,
         new THREE.MeshStandardMaterial({ color: 0xffffff })
       );
-      text1.position.set(-0.7, -0.07, 0);
-      button1Group.add(text1);
+      text1.position.set(-width1 / 2, -0.07, 0);
 
+      const button1Group = new THREE.Group();
+      button1Group.add(box1);
+      button1Group.add(text1);
       button1Group.position.set(0, 0.4, 0);
       button1Group.name = "ordenar";
       anchor.group.add(button1Group);
       buttons.push(button1Group);
 
-      // Botón 2: Operaciones
-      const button2Group = new THREE.Group();
+      // --------- BOTÓN 2: Matekids ---------
+      const texto2 = "Matekids";
+      const geo2 = new THREE.TextGeometry(texto2, {
+        font: font,
+        size: 0.10,
+        height: 0.02,
+      });
+      geo2.computeBoundingBox();
+      const width2 = geo2.boundingBox.max.x - geo2.boundingBox.min.x;
+      const padding2 = 0.3;
+
       const box2 = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 0.4, 0.05),
+        new THREE.BoxGeometry(width2 + padding2, 0.4, 0.05),
         new THREE.MeshStandardMaterial({ color: 0xff5500 })
       );
       box2.position.set(0, 0, -0.03);
-      button2Group.add(box2);
 
       const text2 = new THREE.Mesh(
-        new THREE.TextGeometry("Operaciones", {
-          font: font,
-          size: 0.15,
-          height: 0.02,
-        }),
+        geo2,
         new THREE.MeshStandardMaterial({ color: 0xffffff })
       );
-      text2.position.set(-0.5, -0.07, 0);
-      button2Group.add(text2);
+      text2.position.set(-width2 / 2, -0.07, 0);
 
+      const button2Group = new THREE.Group();
+      button2Group.add(box2);
+      button2Group.add(text2);
       button2Group.position.set(0, -0.1, 0);
       button2Group.name = "operaciones";
       anchor.group.add(button2Group);
@@ -100,17 +113,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (selectedGroup.name === "ordenar") {
             console.log("Iniciando juego de palabra...");
-            // iniciarJuegoPalabra(anchor, font, camera, () => {
             iniciarJuegoOrdenarCubo(anchor, font, camera, () => {
-            window.removeEventListener("click", currentTouchHandler);
-            window.removeEventListener("touchstart", currentTouchHandler);
-            window.onclick = null;
-            window.ontouchstart = null;
-            anchor.group.clear();
-            createMenu(font, anchor);
-            setupTouchHandler(anchor, font, camera);
-          });
-
+              window.removeEventListener("click", currentTouchHandler);
+              window.removeEventListener("touchstart", currentTouchHandler);
+              window.onclick = null;
+              window.ontouchstart = null;
+              anchor.group.clear();
+              createMenu(font, anchor);
+              setupTouchHandler(anchor, font, camera);
+            });
           } else if (selectedGroup.name === "operaciones") {
             console.log("Iniciando juego de operaciones...");
             iniciarJuegoOperaciones(anchor, font, camera, () => {
@@ -147,12 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.setAnimationLoop(() => {
       renderer.render(scene, camera);
 
-      // Animar si existe
       if (scene.userData.finalText) {
-        scene.userData.finalText.rotation.y += 0.01; // gira lentamente
+        scene.userData.finalText.rotation.y += 0.01;
       }
     });
-
   };
 
   start();
