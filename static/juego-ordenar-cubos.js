@@ -1,9 +1,8 @@
-export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
+export const iniciarJuegoOrdenarCubo = (anchor, font, camera, volverAlMenu) => {
   anchor.group.clear();
 
   const THREE = window.MINDAR.IMAGE.THREE;
   const textureLoader = new THREE.TextureLoader();
-
   const palabras = ["ESCUELA", "CASA", "ARBOL", "GATO", "SOL"];
   let indicePalabra = 0;
   let targetSequence = palabras[indicePalabra].split("");
@@ -14,11 +13,7 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
   let resultMesh = null;
   let finalText = null;
   let lastRemoved = null;
-
-  //variables para el sistema de puntajes
   let scoreOrdenar = 0;
-  let scoreTextMesh = null;
-
 
   const updateResult = () => {
     if (resultMesh) anchor.group.remove(resultMesh);
@@ -33,20 +28,17 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
     anchor.group.add(resultMesh);
   };
 
-  //funciono para el puntaje
   const actualizarScore = () => {
-    if (scoreTextMesh) anchor.group.remove(scoreTextMesh);
-
-    const geo = new THREE.TextGeometry(`Puntaje: ${scoreOrdenar}`, {
+    if (anchor.scoreMesh) anchor.group.remove(anchor.scoreMesh);
+    const scoreGeo = new THREE.TextGeometry(`Puntos: ${scoreOrdenar}`, {
       font: font,
       size: 0.12,
       height: 0.02,
     });
-
-    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    scoreTextMesh = new THREE.Mesh(geo, mat);
-    scoreTextMesh.position.set(-1.2, 1, 0); // esquina superior izquierda
-    anchor.group.add(scoreTextMesh);
+    const scoreMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    anchor.scoreMesh = new THREE.Mesh(scoreGeo, scoreMat);
+    anchor.scoreMesh.position.set(-1.2, 0.9, 0);
+    anchor.group.add(anchor.scoreMesh);
   };
 
   const mostrarFlotante = (texto, color = 0x00ff00) => {
@@ -57,13 +49,12 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
     });
     const mat = new THREE.MeshStandardMaterial({ color: color });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(0, 0.5, 0); // puedes ajustar
+    mesh.position.set(0, 0.5, 0);
 
     anchor.group.add(mesh);
 
-    // Animación básica: subir + desvanecer + eliminar
     let tiempo = 0;
-    const duracion = 60; // frames
+    const duracion = 60;
     const animar = () => {
       tiempo++;
       mesh.position.y += 0.005;
@@ -80,8 +71,6 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
   };
 
   const mostrarLetras = () => {
-    actualizarScore();
-
     letters.forEach((l) => anchor.group.remove(l));
     letters.length = 0;
     clickedLetters.length = 0;
@@ -94,28 +83,39 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
 
     targetSequence = palabras[indicePalabra].split("");
     const shuffled = [...targetSequence].sort(() => Math.random() - 0.5);
+    const startX = -((shuffled.length - 1) * 0.6) / 2;
 
     shuffled.forEach((letter, i) => {
+      const cube = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.5, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x0077ff })
+      );
+
       const geometry = new THREE.TextGeometry(letter, {
         font: font,
-        size: 0.2,
-        height: 0.05,
-        
+        size: 0.18,
+        height: 0.04,
+        bevelEnabled: true,
+        bevelThickness: 0.01,
+        bevelSize: 0.005,
+        bevelSegments: 2,
       });
-      const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
-      const mesh = new THREE.Mesh(geometry, material);
+      const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const textMesh = new THREE.Mesh(geometry, material);
+      textMesh.position.set(-0.1, -0.1, 0.11);
 
-      const angle = (i / shuffled.length) * Math.PI * 2;
-      const radius = 0.4;
-      mesh.position.set(
-        Math.cos(angle) * radius,
-        Math.sin(angle) * 0.25 + 0.2,
-        0
-      );
-      mesh.name = letter;
-      anchor.group.add(mesh);
-      letters.push(mesh);
+      const grupoLetra = new THREE.Group();
+      grupoLetra.add(cube);
+      grupoLetra.add(textMesh);
+      grupoLetra.name = letter;
+
+      grupoLetra.position.set(startX + i * 0.6, 0, 0);
+
+      anchor.group.add(grupoLetra);
+      letters.push(grupoLetra);
     });
+
+    actualizarScore();
   };
 
   mostrarLetras();
@@ -134,37 +134,34 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
     pointer.set(x, y);
     raycaster.setFromCamera(pointer, camera);
 
-    const intersects = raycaster.intersectObjects(letters);
+    const intersects = raycaster.intersectObjects(letters, true);
     if (intersects.length > 0) {
-      const selected = intersects[0].object;
+      const selected = intersects[0].object.parent;
       const letter = selected.name;
+      const cube = selected.children[0];
 
       if (checkOrder(letter)) {
-        selected.material.color.set(0x00ff00); // 💚 Verde si es correcta
+        cube.material.color.set(0x00ff00);
         setTimeout(() => {
           selected.visible = false;
         }, 300);
         clickedLetters.push(letter);
-        scoreOrdenar += 10; 
+        scoreOrdenar += 10;
         updateResult();
-        actualizarScore();  
-        mostrarFlotante("+10", 0x00ff00);  
-      } else {
-        const originalColor = 0x0077ff; // Azul original (puedes cambiarlo)
-        selected.material.color.set(0xff0000); // Rojo temporal
-
-        scoreOrdenar = Math.max(0, scoreOrdenar - 5); // evita negativos 
         actualizarScore();
-        mostrarFlotante("–5", 0xff0000);
-
+        mostrarFlotante("+10", 0x00ff00);
+      } else {
+        cube.material.color.set(0xff0000);
+        scoreOrdenar = Math.max(0, scoreOrdenar - 5);
+        actualizarScore();
+        mostrarFlotante("-5", 0xff0000);
         setTimeout(() => {
-          selected.material.color.set(originalColor);
-        }, 500); // vuelve al color original después de 0.5 segundos
+          cube.material.color.set(0x0077ff);
+        }, 500);
       }
 
-      // ¿Completó la palabra?
       if (clickedLetters.join("") === targetSequence.join("")) {
-        const geometry = new THREE.TextGeometry("Muy bien!", {
+        const geometry = new THREE.TextGeometry("Muy bien", {
           font: font,
           size: 0.2,
           height: 0.05,
@@ -186,35 +183,27 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
     }
   };
 
-
   window.addEventListener("click", onTouch);
   window.addEventListener("touchstart", (e) => {
     if (e.touches.length > 0) onTouch(e.touches[0]);
   });
 
   const botones = [];
-
   textureLoader.load("./static/assets/icons/back.png", (texture) => {
-    const mat = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-    });
+    const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     const geo = new THREE.PlaneGeometry(0.3, 0.3);
     const btn = new THREE.Mesh(geo, mat);
-    btn.position.set(-0.7, -0.1, 0);
+    btn.position.set(-0.7, -0.9, 0);
     btn.name = "eliminar";
     anchor.group.add(btn);
     botones.push(btn);
   });
 
   textureLoader.load("./static/assets/icons/exit.png", (texture) => {
-    const mat = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-    });
+    const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
     const geo = new THREE.PlaneGeometry(0.3, 0.3);
     const btn = new THREE.Mesh(geo, mat);
-    btn.position.set(0.7, -0.1, 0);
+    btn.position.set(0.7, -0.9, 0);
     btn.name = "salir";
     anchor.group.add(btn);
     botones.push(btn);
@@ -236,7 +225,7 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
           const hidden = letters.find((m) => m.name === last && !m.visible);
           if (hidden) {
             hidden.visible = true;
-            hidden.material.color.set(0x00ff00); // Verde al volver
+            hidden.children[0].material.color.set(0x00ff00);
             lastRemoved = hidden;
           }
         }

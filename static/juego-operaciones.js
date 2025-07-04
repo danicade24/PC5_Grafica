@@ -157,7 +157,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     // Pregunta
     const opGeo = new THREE.TextGeometry(data.texto, {
       font: font,
-      size: 0.2,
+      size: 0.15,
       height: 0.05,
     });
     const opMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
@@ -195,7 +195,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
       const geo = new THREE.PlaneGeometry(0.3, 0.3);
       const btn = new THREE.Mesh(geo, mat);
-      btn.position.set(-0.7, -0.9, 0);
+      btn.position.set(-0.7, -0.8, 0);
       btn.name = "volver";
       grupo.add(btn);
       botones.push(btn);
@@ -206,7 +206,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
       const geo = new THREE.PlaneGeometry(0.3, 0.3);
       const btn = new THREE.Mesh(geo, mat);
-      btn.position.set(0.7, -0.9, 0);
+      btn.position.set(0.7, -0.8, 0);
       btn.name = "salir";
       grupo.add(btn);
       botones.push(btn);
@@ -215,7 +215,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     anchor.group.add(grupo);
     currentGroup = grupo;
 
-    // 🔁 Actualizar referencias para los eventos
+    // Actualizar referencias para los eventos
     lastGroup = currentGroup;
     lastBotones = botones;
 

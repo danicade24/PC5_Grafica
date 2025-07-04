@@ -1,5 +1,6 @@
 // main.js
-import { iniciarJuegoPalabra } from "./juego-ordenar.js";
+import { iniciarJuegoOrdenarCubo } from "./juego-ordenar-cubos.js";
+// import { iniciarJuegoPalabra } from "./juego-ordenar.js";
 import { iniciarJuegoOperaciones } from "./juego-operaciones.js";
 
 const THREE = window.MINDAR.IMAGE.THREE;
@@ -98,8 +99,9 @@ document.addEventListener("DOMContentLoaded", () => {
           anchor.group.clear();
 
           if (selectedGroup.name === "ordenar") {
-            console.log("🧩 Iniciando juego de palabra...");
-            iniciarJuegoPalabra(anchor, font, camera, () => {
+            console.log("Iniciando juego de palabra...");
+            // iniciarJuegoPalabra(anchor, font, camera, () => {
+            iniciarJuegoOrdenarCubo(anchor, font, camera, () => {
             window.removeEventListener("click", currentTouchHandler);
             window.removeEventListener("touchstart", currentTouchHandler);
             window.onclick = null;
@@ -110,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
           });
 
           } else if (selectedGroup.name === "operaciones") {
-            console.log("🧮 Iniciando juego de operaciones...");
+            console.log("Iniciando juego de operaciones...");
             iniciarJuegoOperaciones(anchor, font, camera, () => {
               window.removeEventListener("click", currentTouchHandler);
               window.removeEventListener("touchstart", currentTouchHandler);
