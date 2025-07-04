@@ -20,6 +20,11 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
 
+  //variables para el puntaje
+  let scoreOperaciones = 0;
+  let scoreTextOperaciones = null;
+
+
   const generarOperacion = () => {
     const a = Math.floor(Math.random() * max);
     const b = Math.floor(Math.random() * max);
@@ -61,13 +66,60 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     anchor.group.add(contadorText);
   };
 
+  //funcion para el puntaje
+  const actualizarScoreOperaciones = () => {
+    if (scoreTextOperaciones) anchor.group.remove(scoreTextOperaciones);
+
+    const geo = new THREE.TextGeometry(`Puntaje: ${scoreOperaciones}`, {
+      font: font,
+      size: 0.12,
+      height: 0.02,
+    });
+
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    scoreTextOperaciones = new THREE.Mesh(geo, mat);
+    scoreTextOperaciones.position.set(-1.2, 1, 0); // esquina superior izquierda
+    anchor.group.add(scoreTextOperaciones);
+  };
+
+  const mostrarFlotante = (texto, color = 0x00ff00) => {
+    const geo = new THREE.TextGeometry(texto, {
+      font: font,
+      size: 0.12,
+      height: 0.02,
+    });
+    const mat = new THREE.MeshStandardMaterial({ color: color });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(0, 0.5, 0); // puedes ajustar
+
+    anchor.group.add(mesh);
+
+    // Animación básica: subir + desvanecer + eliminar
+    let tiempo = 0;
+    const duracion = 60; // frames
+    const animar = () => {
+      tiempo++;
+      mesh.position.y += 0.005;
+      mesh.material.opacity = 1 - tiempo / duracion;
+      mesh.material.transparent = true;
+
+      if (tiempo < duracion) {
+        requestAnimationFrame(animar);
+      } else {
+        anchor.group.remove(mesh);
+      }
+    };
+    animar();
+  };
+
+
   const mostrarResultado = (seleccionado) => {
     const correcto = seleccionado === data.correcta;
-    const msg = correcto ? "Bien" : "Mal";
+    const msg = correcto ? "Correcto" : "Incorrecto";
 
     const newGeo = new THREE.TextGeometry(msg, {
       font: font,
-      size: 0.2,
+      size: 0.15,
       height: 0.05,
     });
     const newMat = new THREE.MeshStandardMaterial({
@@ -77,10 +129,21 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     resultText.position.set(-0.3, -0.5, 0);
     lastGroup.add(resultText);
 
+    // Actualiza puntaje y muestra flotante
+    if (correcto) {
+      scoreOperaciones += 20;
+      mostrarFlotante("+20", 0x00ff00);
+    } else {
+      scoreOperaciones = Math.max(0, scoreOperaciones - 10);
+      mostrarFlotante("–10", 0xff0000);
+    }
+    actualizarScoreOperaciones();
+
     setTimeout(() => {
       mostrarOperacion();
     }, 1500);
   };
+
 
   const mostrarOperacion = () => {
     if (intervalo) clearInterval(intervalo);

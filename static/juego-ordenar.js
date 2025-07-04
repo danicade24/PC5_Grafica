@@ -49,6 +49,36 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
     anchor.group.add(scoreTextMesh);
   };
 
+  const mostrarFlotante = (texto, color = 0x00ff00) => {
+    const geo = new THREE.TextGeometry(texto, {
+      font: font,
+      size: 0.12,
+      height: 0.02,
+    });
+    const mat = new THREE.MeshStandardMaterial({ color: color });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(0, 0.5, 0); // puedes ajustar
+
+    anchor.group.add(mesh);
+
+    // Animación básica: subir + desvanecer + eliminar
+    let tiempo = 0;
+    const duracion = 60; // frames
+    const animar = () => {
+      tiempo++;
+      mesh.position.y += 0.005;
+      mesh.material.opacity = 1 - tiempo / duracion;
+      mesh.material.transparent = true;
+
+      if (tiempo < duracion) {
+        requestAnimationFrame(animar);
+      } else {
+        anchor.group.remove(mesh);
+      }
+    };
+    animar();
+  };
+
   const mostrarLetras = () => {
     actualizarScore();
 
@@ -116,13 +146,15 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
         clickedLetters.push(letter);
         scoreOrdenar += 10; 
         updateResult();
-        actualizarScore();   
+        actualizarScore();  
+        mostrarFlotante("+10", 0x00ff00);  
       } else {
         const originalColor = 0x0077ff; // Azul original (puedes cambiarlo)
         selected.material.color.set(0xff0000); // Rojo temporal
 
         scoreOrdenar = Math.max(0, scoreOrdenar - 5); // evita negativos 
         actualizarScore();
+        mostrarFlotante("–5", 0xff0000);
 
         setTimeout(() => {
           selected.material.color.set(originalColor);
@@ -143,6 +175,7 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
 
         scoreOrdenar += 20;
         actualizarScore();
+        mostrarFlotante("+20", 0xffff00);
 
         setTimeout(() => {
           indicePalabra = (indicePalabra + 1) % palabras.length;
