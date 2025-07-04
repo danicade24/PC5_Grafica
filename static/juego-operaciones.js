@@ -8,13 +8,17 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
   const max = 10;
   let intervalo = null;
   let tiempoRestante = 10;
-  let botones = [];
   let currentGroup = null;
   let data = null;
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
   let barraProgreso = null;
   let contadorText = null;
+
+  // NUEVO: Referencias estables para eventos
+  let lastGroup = null;
+  let lastBotones = [];
+
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
 
   const generarOperacion = () => {
     const a = Math.floor(Math.random() * max);
@@ -71,7 +75,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     });
     const resultText = new THREE.Mesh(newGeo, newMat);
     resultText.position.set(-0.3, -0.5, 0);
-    currentGroup.add(resultText);
+    lastGroup.add(resultText);
 
     setTimeout(() => {
       mostrarOperacion();
@@ -81,10 +85,11 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
   const mostrarOperacion = () => {
     if (intervalo) clearInterval(intervalo);
     anchor.group.clear();
-    botones = [];
     tiempoRestante = 10;
     data = generarOperacion();
-    currentGroup = new THREE.Group();
+
+    const grupo = new THREE.Group();
+    const botones = [];
 
     // Pregunta
     const opGeo = new THREE.TextGeometry(data.texto, {
@@ -95,7 +100,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     const opMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
     const opMesh = new THREE.Mesh(opGeo, opMat);
     opMesh.position.set(-0.3, 0.4, 0);
-    currentGroup.add(opMesh);
+    grupo.add(opMesh);
 
     // Opciones
     data.alternativas.forEach((num, i) => {
@@ -119,7 +124,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       grupoRespuesta.position.set(-0.7 + i * 0.7, -0.1, 0);
       grupoRespuesta.name = num.toString();
 
-      currentGroup.add(grupoRespuesta);
+      grupo.add(grupoRespuesta);
     });
 
     // Botón VOLVER
@@ -129,7 +134,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       const btn = new THREE.Mesh(geo, mat);
       btn.position.set(-0.7, -0.9, 0);
       btn.name = "volver";
-      currentGroup.add(btn);
+      grupo.add(btn);
       botones.push(btn);
     });
 
@@ -140,11 +145,17 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       const btn = new THREE.Mesh(geo, mat);
       btn.position.set(0.7, -0.9, 0);
       btn.name = "salir";
-      currentGroup.add(btn);
+      grupo.add(btn);
       botones.push(btn);
     });
 
-    anchor.group.add(currentGroup);
+    anchor.group.add(grupo);
+    currentGroup = grupo;
+
+    // 🔁 Actualizar referencias para los eventos
+    lastGroup = currentGroup;
+    lastBotones = botones;
+
     actualizarBarra();
     actualizarContador();
 
@@ -166,7 +177,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     pointer.set(x, y);
     raycaster.setFromCamera(pointer, camera);
 
-    const intersectedBtns = raycaster.intersectObjects(botones, true);
+    const intersectedBtns = raycaster.intersectObjects(lastBotones, true);
     if (intersectedBtns.length > 0) {
       const nombre = intersectedBtns[0].object.name;
       if (nombre === "salir" || nombre === "volver") {
@@ -179,7 +190,7 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       }
     }
 
-    const intersected = raycaster.intersectObjects(currentGroup.children, true);
+    const intersected = raycaster.intersectObjects(lastGroup?.children || [], true);
     if (intersected.length > 0) {
       const seleccionado = parseInt(intersected[0].object.parent.name);
       if (!isNaN(seleccionado)) {
@@ -189,8 +200,8 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     }
   };
 
-  window.addEventListener("click", handleClick);
-  window.addEventListener("touchstart", handleClick);
+  window.addEventListener("click", handleClick, { passive: true });
+  window.addEventListener("touchstart", handleClick, { passive: true });
 
   mostrarOperacion();
 };
