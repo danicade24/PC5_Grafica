@@ -2,20 +2,19 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
   anchor.group.clear();
 
   const THREE = window.MINDAR.IMAGE.THREE;
+  const textureLoader = new THREE.TextureLoader();
 
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
   const operaciones = ["+", "-"];
   const max = 10;
+  let intervalo = null;
+  let tiempoRestante = 10;
+  let botones = [];
   let currentGroup = null;
-  let resultText = null;
+  let data = null;
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
   let barraProgreso = null;
   let contadorText = null;
-  let tiempoRestante = 10;
-  let intervalo = null;
-
-  const textureLoader = new THREE.TextureLoader();
-  const iconoSalir = textureLoader.load("/static/assets/img/exit.png");
 
   const generarOperacion = () => {
     const a = Math.floor(Math.random() * max);
@@ -58,18 +57,36 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     anchor.group.add(contadorText);
   };
 
+  const mostrarResultado = (seleccionado) => {
+    const correcto = seleccionado === data.correcta;
+    const msg = correcto ? "Bien" : "Mal";
+
+    const newGeo = new THREE.TextGeometry(msg, {
+      font: font,
+      size: 0.2,
+      height: 0.05,
+    });
+    const newMat = new THREE.MeshStandardMaterial({
+      color: correcto ? 0x00ff00 : 0xff0000,
+    });
+    const resultText = new THREE.Mesh(newGeo, newMat);
+    resultText.position.set(-0.3, -0.5, 0);
+    currentGroup.add(resultText);
+
+    setTimeout(() => {
+      mostrarOperacion();
+    }, 1500);
+  };
+
   const mostrarOperacion = () => {
-    if (currentGroup) anchor.group.remove(currentGroup);
-    if (resultText) anchor.group.remove(resultText);
-    if (barraProgreso) anchor.group.remove(barraProgreso);
-    if (contadorText) anchor.group.remove(contadorText);
+    if (intervalo) clearInterval(intervalo);
+    anchor.group.clear();
+    botones = [];
     tiempoRestante = 10;
-    actualizarBarra();
-    actualizarContador();
+    data = generarOperacion();
+    currentGroup = new THREE.Group();
 
-    const grupo = new THREE.Group();
-    const data = generarOperacion();
-
+    // Pregunta
     const opGeo = new THREE.TextGeometry(data.texto, {
       font: font,
       size: 0.2,
@@ -78,16 +95,14 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
     const opMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
     const opMesh = new THREE.Mesh(opGeo, opMat);
     opMesh.position.set(-0.3, 0.4, 0);
-    grupo.add(opMesh);
+    currentGroup.add(opMesh);
 
-    const alternativasMesh = [];
+    // Opciones
     data.alternativas.forEach((num, i) => {
       const cube = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.2, 0.05),
+        new THREE.BoxGeometry(0.3, 0.2, 0.15),
         new THREE.MeshStandardMaterial({ color: 0x007700 })
       );
-      cube.position.set(-0.7 + i * 0.7, -0.1, 0);
-      grupo.add(cube);
 
       const numGeo = new THREE.TextGeometry(num.toString(), {
         font: font,
@@ -96,34 +111,44 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
       });
       const numMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
       const numMesh = new THREE.Mesh(numGeo, numMat);
-      numMesh.position.set(
-        cube.position.x - 0.08,
-        cube.position.y - 0.05,
-        0.03
-      );
-      numMesh.name = num.toString();
-      grupo.add(numMesh);
+      numMesh.position.set(-0.07, -0.05, 0.08);
 
-      alternativasMesh.push(numMesh);
+      const grupoRespuesta = new THREE.Group();
+      grupoRespuesta.add(cube);
+      grupoRespuesta.add(numMesh);
+      grupoRespuesta.position.set(-0.7 + i * 0.7, -0.1, 0);
+      grupoRespuesta.name = num.toString();
+
+      currentGroup.add(grupoRespuesta);
     });
 
-    // Botón salir (con imagen) más abajo
-    const textureMat = new THREE.MeshBasicMaterial({
-      map: iconoSalir,
-      transparent: true,
+    // Botón VOLVER
+    textureLoader.load("./static/assets/icons/back.png", (texture) => {
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+      const geo = new THREE.PlaneGeometry(0.3, 0.3);
+      const btn = new THREE.Mesh(geo, mat);
+      btn.position.set(-0.7, -0.9, 0);
+      btn.name = "volver";
+      currentGroup.add(btn);
+      botones.push(btn);
     });
-    const exitButton = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.3, 0.3),
-      textureMat
-    );
-    exitButton.position.set(0, -1.2, 0); // centrado abajo
-    exitButton.name = "salir";
-    grupo.add(exitButton);
 
-    anchor.group.add(grupo);
-    currentGroup = grupo;
+    // Botón SALIR
+    textureLoader.load("./static/assets/icons/exit.png", (texture) => {
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+      const geo = new THREE.PlaneGeometry(0.3, 0.3);
+      const btn = new THREE.Mesh(geo, mat);
+      btn.position.set(0.7, -0.9, 0);
+      btn.name = "salir";
+      currentGroup.add(btn);
+      botones.push(btn);
+    });
 
-    const actualizarTiempo = () => {
+    anchor.group.add(currentGroup);
+    actualizarBarra();
+    actualizarContador();
+
+    intervalo = setInterval(() => {
       tiempoRestante--;
       actualizarBarra();
       actualizarContador();
@@ -131,55 +156,41 @@ export const iniciarJuegoOperaciones = (anchor, font, camera, volverAlMenu) => {
         clearInterval(intervalo);
         mostrarOperacion();
       }
-    };
-    intervalo = setInterval(actualizarTiempo, 1000);
-
-    const onTouch = (event) => {
-      const x = (event.clientX / window.innerWidth) * 2 - 1;
-      const y = -(event.clientY / window.innerHeight) * 2 + 1;
-      pointer.set(x, y);
-      raycaster.setFromCamera(pointer, camera);
-
-      const intersected = raycaster.intersectObjects(alternativasMesh, true);
-      if (intersected.length > 0) {
-        const selected = intersected[0].object;
-        const seleccionado = parseInt(selected.name);
-
-        clearInterval(intervalo);
-
-        const correcto = seleccionado === data.correcta;
-        const msg = correcto ? "✅ Bien" : "❌ Mal";
-        const newGeo = new THREE.TextGeometry(msg, {
-          font: font,
-          size: 0.2,
-          height: 0.05,
-        });
-        const newMat = new THREE.MeshStandardMaterial({
-          color: correcto ? 0x00ff00 : 0xff0000,
-        });
-        resultText = new THREE.Mesh(newGeo, newMat);
-        resultText.position.set(-0.3, -0.5, 0);
-        grupo.add(resultText);
-
-        setTimeout(() => {
-          mostrarOperacion();
-        }, 1500);
-      }
-
-      const boton = raycaster.intersectObject(exitButton, true);
-      if (boton.length > 0 && boton[0].object.name === "salir") {
-        clearInterval(intervalo);
-        window.removeEventListener("click", onTouch);
-        window.removeEventListener("touchstart", () => {});
-        volverAlMenu();
-      }
-    };
-
-    window.addEventListener("click", onTouch);
-    window.addEventListener("touchstart", (e) => {
-      if (e.touches.length > 0) onTouch(e.touches[0]);
-    });
+    }, 1000);
   };
+
+  const handleClick = (event) => {
+    const e = event.touches ? event.touches[0] : event;
+    const x = (e.clientX / window.innerWidth) * 2 - 1;
+    const y = -(e.clientY / window.innerHeight) * 2 + 1;
+    pointer.set(x, y);
+    raycaster.setFromCamera(pointer, camera);
+
+    const intersectedBtns = raycaster.intersectObjects(botones, true);
+    if (intersectedBtns.length > 0) {
+      const nombre = intersectedBtns[0].object.name;
+      if (nombre === "salir" || nombre === "volver") {
+        clearInterval(intervalo);
+        window.removeEventListener("click", handleClick);
+        window.removeEventListener("touchstart", handleClick);
+        anchor.group.clear();
+        volverAlMenu();
+        return;
+      }
+    }
+
+    const intersected = raycaster.intersectObjects(currentGroup.children, true);
+    if (intersected.length > 0) {
+      const seleccionado = parseInt(intersected[0].object.parent.name);
+      if (!isNaN(seleccionado)) {
+        clearInterval(intervalo);
+        mostrarResultado(seleccionado);
+      }
+    }
+  };
+
+  window.addEventListener("click", handleClick);
+  window.addEventListener("touchstart", handleClick);
 
   mostrarOperacion();
 };

@@ -85,17 +85,30 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
       const selected = intersects[0].object;
       const letter = selected.name;
 
-      selected.visible = false;
-      clickedLetters.push(letter);
-      updateResult();
+      if (checkOrder(letter)) {
+        selected.material.color.set(0x00ff00); // 💚 Verde si es correcta
+        setTimeout(() => {
+          selected.visible = false;
+        }, 300);
+        clickedLetters.push(letter);
+        updateResult();
+      } else {
+        const originalColor = 0x0077ff; // Azul original (puedes cambiarlo)
+        selected.material.color.set(0xff0000); // Rojo temporal
 
+        setTimeout(() => {
+          selected.material.color.set(originalColor);
+        }, 500); // vuelve al color original después de 0.5 segundos
+      }
+
+      // ¿Completó la palabra?
       if (clickedLetters.join("") === targetSequence.join("")) {
-        const geometry = new THREE.TextGeometry("!Muy bien!", {
+        const geometry = new THREE.TextGeometry("Muy bien!", {
           font: font,
           size: 0.2,
           height: 0.05,
         });
-        const material = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        const material = new THREE.MeshStandardMaterial({ color: 0xffff66 });
         finalText = new THREE.Mesh(geometry, material);
         finalText.position.set(-0.3, -0.4, 0);
         anchor.group.add(finalText);
@@ -107,6 +120,7 @@ export const iniciarJuegoPalabra = (anchor, font, camera, volverAlMenu) => {
       }
     }
   };
+
 
   window.addEventListener("click", onTouch);
   window.addEventListener("touchstart", (e) => {

@@ -8,14 +8,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const start = async () => {
     const mindarThree = new window.MINDAR.IMAGE.MindARThree({
       container: document.body,
-      imageTargetSrc: "/static/assets/targets/eye.mind",
+      imageTargetSrc: "/static/assets/targets/targets (3).mind",
     });
 
     const { renderer, scene, camera } = mindarThree;
     const anchor = mindarThree.addAnchor(0);
 
     anchor.onTargetFound = () => {
-      console.log("🎯 MARCADOR DETECTADO");
+      console.log("MARCADOR DETECTADO");
     };
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
@@ -100,13 +100,22 @@ document.addEventListener("DOMContentLoaded", () => {
           if (selectedGroup.name === "ordenar") {
             console.log("🧩 Iniciando juego de palabra...");
             iniciarJuegoPalabra(anchor, font, camera, () => {
-              anchor.group.clear();
-              createMenu(font, anchor);
-              setupTouchHandler(anchor, font, camera);
-            });
+            window.removeEventListener("click", currentTouchHandler);
+            window.removeEventListener("touchstart", currentTouchHandler);
+            window.onclick = null;
+            window.ontouchstart = null;
+            anchor.group.clear();
+            createMenu(font, anchor);
+            setupTouchHandler(anchor, font, camera);
+          });
+
           } else if (selectedGroup.name === "operaciones") {
             console.log("🧮 Iniciando juego de operaciones...");
             iniciarJuegoOperaciones(anchor, font, camera, () => {
+              window.removeEventListener("click", currentTouchHandler);
+              window.removeEventListener("touchstart", currentTouchHandler);
+              window.onclick = null;
+              window.ontouchstart = null;
               anchor.group.clear();
               createMenu(font, anchor);
               setupTouchHandler(anchor, font, camera);
