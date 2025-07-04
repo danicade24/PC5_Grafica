@@ -3,17 +3,24 @@ export const iniciarJuegoOrdenarCubo = (anchor, font, camera, volverAlMenu) => {
 
   const THREE = window.MINDAR.IMAGE.THREE;
   const textureLoader = new THREE.TextureLoader();
-  const palabras = ["ESCUELA", "CASA", "ARBOL", "GATO", "SOL"];
+  const palabras = [
+  "ESCUELA", "CASA", "ARBOL", "GATO", "SOL",
+  "LUNA", "RANA", "PERRO", "AGUA", "LIBRO",
+  "FUEGO", "NUBE", "PIE", "LECHE", "MAIZ"
+];
   let indicePalabra = 0;
   let targetSequence = palabras[indicePalabra].split("");
   const clickedLetters = [];
   const letters = [];
+
 
   const resultMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
   let resultMesh = null;
   let finalText = null;
   let lastRemoved = null;
   let scoreOrdenar = 0;
+  let palabrasJugadas = 0;
+
 
   const updateResult = () => {
     if (resultMesh) anchor.group.remove(resultMesh);
@@ -87,29 +94,29 @@ export const iniciarJuegoOrdenarCubo = (anchor, font, camera, volverAlMenu) => {
 
     shuffled.forEach((letter, i) => {
       const cube = new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 0.5, 0.2),
+        new THREE.BoxGeometry(0.35, 0.35, 0.15),
         new THREE.MeshStandardMaterial({ color: 0x0077ff })
       );
 
       const geometry = new THREE.TextGeometry(letter, {
         font: font,
-        size: 0.18,
-        height: 0.04,
+        size: 0.12,
+        height: 0.03,
         bevelEnabled: true,
-        bevelThickness: 0.01,
-        bevelSize: 0.005,
+        bevelThickness: 0.008,
+        bevelSize: 0.004,
         bevelSegments: 2,
       });
       const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
       const textMesh = new THREE.Mesh(geometry, material);
-      textMesh.position.set(-0.1, -0.1, 0.11);
+      textMesh.position.set(-0.07, -0.07, 0.08);
 
       const grupoLetra = new THREE.Group();
       grupoLetra.add(cube);
       grupoLetra.add(textMesh);
       grupoLetra.name = letter;
 
-      grupoLetra.position.set(startX + i * 0.6, 0, 0);
+      grupoLetra.position.set(startX + i * 0.45, 0, 0);
 
       anchor.group.add(grupoLetra);
       letters.push(grupoLetra);
